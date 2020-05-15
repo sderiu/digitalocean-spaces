@@ -10,7 +10,7 @@ import Vapor
 
 extension Container {
     
-    public func DOSpaces() throws -> DigitalOceanSpaces {
+    public func DOSpaces() throws -> DOSpaces {
         return try make()
     }
     

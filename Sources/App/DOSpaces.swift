@@ -9,7 +9,7 @@ import Vapor
 import S3Signer
 import Service
 
-public final class DigitalOceanSpaces : Service {
+public final class DOSpaces : Service {
         
     var s3signer : S3Signer
     
