@@ -27,7 +27,7 @@ public final class DOSpaces : Service {
         
         
         let endpoint: String
-        
+
         /// AWS Access Key
         let accessKey: String
         
@@ -48,14 +48,13 @@ public final class DOSpaces : Service {
             self.securityToken = securityToken
         }
     }
-    
-
-    
  
 }
 
 extension DOSpaces {
     
+    /// upload a file
+    /// return the url string of the file
     public func upload(_ req: Request, path: String, file: File, name: String?) throws -> Future<String> {
          let s3 = try req.makeS3Signer()
          let url = "\(try req.DOSpaces().config.endpoint)\(path)/\( name ?? file.filename ).\(file.ext ?? "")"
@@ -63,8 +62,10 @@ extension DOSpaces {
          headers.add(name: "x-amz-acl", value: "public-read")
          return try req.make(Client.self).put(url, headers: headers) { put in
              return put.http.body = HTTPBody(data: file.data)
-             }.map { _ in
-                 return url
+             }.map { response in
+                guard response.http.status == .ok else { throw Abort(response.http.status)}
+                return url
          }
      }
+    
 }
