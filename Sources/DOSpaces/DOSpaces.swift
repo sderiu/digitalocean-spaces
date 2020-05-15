@@ -54,7 +54,7 @@ public final class DOSpaces : Service {
  
 }
 
-extension DigitalOceanSpaces {
+extension DOSpaces {
     
     func upload(_ req: Request, path: String, file: File, name: String?) throws -> Future<String> {
          let s3 = try req.makeS3Signer()
