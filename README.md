@@ -1,20 +1,27 @@
-<p align="center">
-    <img src="https://user-images.githubusercontent.com/1342803/36623515-7293b4ec-18d3-11e8-85ab-4e2f8fb38fbd.png" width="320" alt="API Template">
-    <br>
-    <br>
-    <a href="http://docs.vapor.codes/3.0/">
-        <img src="http://img.shields.io/badge/read_the-docs-2196f3.svg" alt="Documentation">
-    </a>
-    <a href="https://discord.gg/vapor">
-        <img src="https://img.shields.io/discord/431917998102675485.svg" alt="Team Chat">
-    </a>
-    <a href="LICENSE">
-        <img src="http://img.shields.io/badge/license-MIT-brightgreen.svg" alt="MIT License">
-    </a>
-    <a href="https://circleci.com/gh/vapor/api-template">
-        <img src="https://circleci.com/gh/vapor/api-template.svg?style=shield" alt="Continuous Integration">
-    </a>
-    <a href="https://swift.org">
-        <img src="http://img.shields.io/badge/swift-5.1-brightgreen.svg" alt="Swift 5.1">
-    </a>
-</p>
+# DOSpaces
+
+[Vapor 3](https://vapor.codes/) Service for [DigitalOcean Spaces](https://developers.digitalocean.com/documentation/spaces/)
+
+Easily management of files in a DigitalOcean Space.
+* Currently supported operation: `upload`
+
+### Installation (SPM)
+ ```ruby
+.Package(url: "https://github.com/sderiu/digitalocean-spaces.git", .branch("master"))
+ ```
+
+### Usage
+```
+let dosconfig = DOSpaces.Config(endpoint: "YOUR_SPACE_ENDPOINT", accessKey: "ACCESS_KEY", secretKey: "SECRET_KEY", region: .euCentral1) #See [S3Signer](https://github.com/rausnitz/S3.git) for supported region
+let dospace = try DOSpaces(dosconfig)
+services.register(dospace)
+```
+###### Upload
+```
+func uploadMyFile(_ req: Request, myFile: File) throws -> Future<String> {
+    let space = try req.DOSpaces()
+    return try space.upload(req, path: "your/path/", file: myFile, name: "myFileName") // File extension is auto-filled
+    //returns the uploaded file url
+}
+```
+
