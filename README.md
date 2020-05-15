@@ -22,7 +22,7 @@ services.register(dospace)
 ```
 func uploadMyFile(_ req: Request, myFile: File) throws -> Future<String> {
     let space = try req.DOSpaces()
-    return try space.upload(req, path: "your/path/", file: myFile, name: "myFileName") // File extension is auto-filled
+    return try space.upload(req, path: "your/path", file: myFile, name: "myFileName") // File extension is auto-filled
     //returns the uploaded file url
 }
 ```
