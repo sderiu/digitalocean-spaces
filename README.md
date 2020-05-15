@@ -2,7 +2,9 @@
 
 [Vapor 3](https://vapor.codes/) Service for [DigitalOcean Spaces](https://developers.digitalocean.com/documentation/spaces/)
 
-Easily management of files in a DigitalOcean Space.
+Simple service to easily manage files in DigitalOcean Spaces.
+Uses [S3Signer](https://github.com/rausnitz/S3.git) for authentication.
+
 * Currently supported operation: `upload`
 
 ### Installation (SPM)
