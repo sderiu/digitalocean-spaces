@@ -56,7 +56,7 @@ public final class DOSpaces : Service {
 
 extension DOSpaces {
     
-    func upload(_ req: Request, path: String, file: File, name: String?) throws -> Future<String> {
+    public func upload(_ req: Request, path: String, file: File, name: String?) throws -> Future<String> {
          let s3 = try req.makeS3Signer()
          let url = "\(try req.DOSpaces().config.endpoint)\(path)/\( name ?? file.filename ).\(file.ext ?? "")"
          var headers = try s3.headers(for: .PUT, urlString: url, payload: Payload.bytes(file.data))
