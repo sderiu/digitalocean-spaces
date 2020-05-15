@@ -27,7 +27,7 @@ public final class DOSpaces : Service {
         
         
         let endpoint: String
-
+        let cdn: Bool?
         /// AWS Access Key
         let accessKey: String
         
@@ -40,11 +40,12 @@ public final class DOSpaces : Service {
         let securityToken : String?
         
         /// Initalizer
-        public init(endpoint: String, accessKey: String, secretKey: String, region: Region, securityToken: String? = nil) {
+        public init(endpoint: String, accessKey: String, secretKey: String, region: Region, cdn: Bool?, securityToken: String? = nil) {
             self.endpoint = endpoint
             self.accessKey = accessKey
             self.secretKey = secretKey
             self.region = region
+            self.cdn = cdn
             self.securityToken = securityToken
         }
     }
@@ -56,16 +57,19 @@ extension DOSpaces {
     /// upload a file
     /// return the url string of the file
     public func upload(_ req: Request, path: String, file: File, name: String?) throws -> Future<String> {
-         let s3 = try req.makeS3Signer()
-         let url = "\(try req.DOSpaces().config.endpoint)\(path)/\( name ?? file.filename ).\(file.ext ?? "")"
-         var headers = try s3.headers(for: .PUT, urlString: url, payload: Payload.bytes(file.data))
-         headers.add(name: "x-amz-acl", value: "public-read")
-         return try req.make(Client.self).put(url, headers: headers) { put in
-             return put.http.body = HTTPBody(data: file.data)
-             }.map { response in
-                guard response.http.status == .ok else { throw Abort(response.http.status)}
-                return url
-         }
-     }
+        let s3 = try req.makeS3Signer()
+        let url = "\(self.config.endpoint)\(path)/\( name ?? file.filename ).\(file.ext ?? "")"
+        var headers = try s3.headers(for: .PUT, urlString: url, payload: Payload.bytes(file.data))
+        headers.add(name: "x-amz-acl", value: "public-read")
+        return try req.make(Client.self).put(url, headers: headers) { put in
+            return put.http.body = HTTPBody(data: file.data)
+        }.map { response in
+            guard response.http.status == .ok else { throw Abort(response.http.status)}
+            if(self.config.cdn ?? false){
+                return url.replacingOccurrences(of: ".digitaloceanspaces", with: ".cdn.digitaloceanspaces")
+            }
+            return url
+        }
+    }
     
 }
