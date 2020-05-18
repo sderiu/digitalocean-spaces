@@ -8,11 +8,10 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/vapor/vapor.git", from: "3.0.0"),
-        .package(url: "https://github.com/rausnitz/S3.git", .branch("master")),
-        .package(url: "https://github.com/MaxDesiatov/XMLCoder.git", from: "0.11.1")
+        .package(url: "https://github.com/rausnitz/S3.git", .branch("master"))
     ],
     targets: [
-        .target(name: "DOSpaces", dependencies: ["S3Signer", "Vapor", "XMLCoder"]),
+        .target(name: "DOSpaces", dependencies: ["S3Signer", "Vapor"]),
         .testTarget(name: "AppTests", dependencies: ["DOSpaces"])
     ]
 )
