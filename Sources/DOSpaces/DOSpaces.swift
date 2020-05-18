@@ -8,6 +8,7 @@
 import Vapor
 import S3Signer
 import Service
+import XMLCoder
 
 public final class DOSpaces : Service {
         
@@ -84,4 +85,24 @@ extension DOSpaces {
         }
     }
     
+    public func list(_ req: Request) throws -> Future<[Key]> {
+        let s3 = try req.makeS3Signer()
+        let url = self.config.endpoint
+        let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none )
+        return try req.make(Client.self).get(url, headers: headers).map{ response in
+            guard let data = response.http.body.data else { throw Abort(.noContent)}
+            let record = try? XMLDecoder().decode(Record.self, from: data)
+            return record?.keys ?? []
+        }
+    }
+    
+    public struct Record: Codable {
+        var keys: [Key]
+    }
+    
+    public struct Key: Codable {
+        var key : String
+    }
 }
+
+
