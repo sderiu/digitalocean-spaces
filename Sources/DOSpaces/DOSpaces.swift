@@ -58,7 +58,7 @@ extension DOSpaces {
     /// return the url string of the file
     public func upload(_ req: Request, path: String, file: File, name: String?) throws -> Future<String> {
         let s3 = try req.makeS3Signer()
-        let url = "\(self.config.endpoint)\(path)/\( name ?? file.filename ).\(file.ext ?? "")"
+        let url = "\(self.config.endpoint)/\(path)/\( name ?? file.filename )"
         var headers = try s3.headers(for: .PUT, urlString: url, payload: Payload.bytes(file.data))
         headers.add(name: "x-amz-acl", value: "public-read")
         return try req.make(Client.self).put(url, headers: headers) { put in
@@ -69,6 +69,16 @@ extension DOSpaces {
                 return url.replacingOccurrences(of: ".digitaloceanspaces", with: ".cdn.digitaloceanspaces")
             }
             return url
+        }
+    }
+    
+    public func delete(_ req: Request, path: String, name: String) throws -> Future<HTTPStatus> {
+        let s3 = try req.makeS3Signer()
+        let url = "\(self.config.endpoint)/\(path)/\(name)"
+        let headers = try s3.headers(for: .DELETE, urlString: url, payload: Payload.unsigned )
+        return try req.make(Client.self).delete(url, headers: headers).map(to: HTTPStatus.self){
+            response in
+            return response.http.status
         }
     }
     
