@@ -5,11 +5,11 @@
 Simple service to easily manage files in DigitalOcean Spaces.
 Uses [S3Signer](https://github.com/rausnitz/S3.git) for authentication.
 
-* Currently supported operation: `upload`
+* Currently supported operation: `upload`,`delete`
 
 ### Installation (SPM)
  ```ruby
-.Package(url: "https://github.com/sderiu/digitalocean-spaces.git", .branch("master"))
+.package(url: "https://github.com/sderiu/digitalocean-spaces.git", .branch("master"))
  ```
 
 ### Usage
@@ -22,8 +22,12 @@ services.register(dospace)
 ```
 func uploadMyFile(_ req: Request, myFile: File) throws -> Future<String> {
     let space = try req.DOSpaces()
-    return try space.upload(req, path: "your/path", file: myFile, name: "myFileName") // File extension is auto-filled
+    return try space.upload(req, path: "your/path", file: myFile, name: "myFileName")
     //returns the uploaded file url
 }
 ```
-
+###### Delete
+```
+return try space.delete(req, path: "your/path", name: "myFileName")
+//returns status 204 
+```
