@@ -72,10 +72,12 @@ extension DOSpaces {
         }
     }
     
+    ///delete a file
+    ///return status 204 if deleted
     public func delete(_ req: Request, path: String, name: String) throws -> Future<HTTPStatus> {
         let s3 = try req.makeS3Signer()
         let url = "\(self.config.endpoint)/\(path)/\(name)"
-        let headers = try s3.headers(for: .DELETE, urlString: url, payload: Payload.unsigned )
+        let headers = try s3.headers(for: .DELETE, urlString: url, payload: Payload.none )
         return try req.make(Client.self).delete(url, headers: headers).map(to: HTTPStatus.self){
             response in
             return response.http.status
