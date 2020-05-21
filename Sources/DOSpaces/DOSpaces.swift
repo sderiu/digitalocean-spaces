@@ -89,6 +89,17 @@ extension DOSpaces {
         }
     }
     
+    ///Check if a key exist in the bucket
+    ///Return status 200 if exist
+    public func exist(_ req: Request, key: String) throws -> Future<HTTPStatus> {
+        let s3 = try req.makeS3Signer()
+        let url = "\(self.config.endpoint)/\(key)"
+        let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none )
+        return try req.make(Client.self).get(url, headers: headers).map(to: HTTPStatus.self){ response in
+            return response.http.status
+        }
+    }
+    
     func list(_ req: Request, limit: Int? = 1000, marker: String? = "", appendTo: String? = "") throws -> Future<String> {
         let s3 = try req.makeS3Signer()
         let url = self.config.endpoint + "?max-keys=\(limit ?? 1000)" + "&marker=" + (marker ?? "")
