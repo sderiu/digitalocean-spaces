@@ -5,7 +5,7 @@
 Simple service to easily manage files in DigitalOcean Spaces.
 Uses [S3Signer](https://github.com/rausnitz/S3.git) for authentication.
 
-* Currently supported operation: `upload`,`delete`,`list`,`keys`
+* Currently supported operation: `upload`,`delete`,`keys`
 
 ### Installation (SPM)
  ```ruby
@@ -33,12 +33,6 @@ func uploadMyFile(_ req: Request, myFile: File) throws -> Future<String> {
 return try space.delete(req, path: "your/path", name: "myFileName")
 //returns status 204 
 ```
-###### List
-```
-return try space.list(req)
-//return xml string listing the content of the bucket
-```
-
 ###### Keys
 ```
 return try space.keys(req)
