@@ -58,7 +58,10 @@ extension DOSpaces {
     
     /// Upload a file
     /// Return the url string of the file or the empty string if the file is not valid
-    public func upload(_ req: Request, path: String, file: File, name: String?) throws -> Future<String> {
+    public func upload(_ req: Request, path: String, file: File?, name: String?) throws -> Future<String> {
+        guard let file = file else {
+            return req.eventLoop.newSucceededFuture(result: "")
+        }
         let s3 = try req.makeS3Signer()
         let url = "\(self.config.endpoint)/\(path)/\( name ?? file.filename )"
         var headers = try s3.headers(for: .PUT, urlString: url, payload: Payload.bytes(file.data))
