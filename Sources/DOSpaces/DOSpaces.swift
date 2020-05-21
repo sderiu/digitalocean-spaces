@@ -8,6 +8,7 @@
 import Vapor
 import S3Signer
 import Service
+import SwiftyXMLParser
 
 public final class DOSpaces : Service {
         
@@ -89,6 +90,18 @@ extension DOSpaces {
         let url = self.config.endpoint
         let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none )
         return try req.make(Client.self).get(url, headers: headers)
+    }
+    
+    public func keys(_ req: Request) throws -> Future<[String]> {
+        return try req.DOSpaces().list(req).map{ response in
+            guard let data = response.http.body.data else { throw Abort(.noContent) }
+            let xml = XML.parse(data)
+            var keys : [String] = []
+            for key in xml.ListBucketResult.Contents {
+                keys.append(key.Key.text ?? "")
+            }
+            return keys
+        }
     }
 }
 
