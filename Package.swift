@@ -12,8 +12,7 @@ let package = Package(
         .package(url: "https://github.com/drmohundro/SWXMLHash.git", from: "5.0.0")
     ],
     targets: [
-        .target(name: "DOSpaces", dependencies: ["S3Signer", "Vapor", "SWXMLHash"]),
-        .testTarget(name: "AppTests", dependencies: ["DOSpaces"])
+        .target(name: "DOSpaces", dependencies: ["S3Signer", "Vapor", "SWXMLHash"])
     ]
 )
 
