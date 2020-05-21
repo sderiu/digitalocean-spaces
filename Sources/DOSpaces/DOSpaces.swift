@@ -8,7 +8,7 @@
 import Vapor
 import S3Signer
 import Service
-import SwiftyXMLParser
+import SWXMLHash
 
 public final class DOSpaces : Service {
     
@@ -101,9 +101,9 @@ extension DOSpaces {
                 var str = (appendTo ?? "") + responseText
                 guard let data = str.data(using: .utf8)
                     else { throw Abort(.noContent) }
-                let xml = XML.parse(data)
-                if xml.ListBucketResult.NextMarker.text != nil{
-                    let marker = xml.ListBucketResult.NextMarker.text
+                let xml = SWXMLHash.parse(data)
+                if xml["ListBucketResult"]["NextMarker"].element?.text != nil{
+                    let marker = xml["ListBucketResult"]["NextMarker"].element?.text
                     return try self.list(req, marker: marker ?? "", appendTo: str)
                 }
                 else {
@@ -120,14 +120,13 @@ extension DOSpaces {
             return try req.DOSpaces().list(req).map{ xml in
                 guard let data = xml.data(using: .utf8)
                     else { throw Abort(.noContent) }
-                let xml = XML.parse(data)
-                print(xml)
+                let xml = SWXMLHash.parse(data)
+
                 var keys : [String] = []
-                for x in xml.root {
-                    for r in x.ListBucketResult{
-                        for key in r.Contents {
-                            keys.append(key.Key.text ?? "")
-                        }
+                
+                for x in xml["root"]["ListBucketResult"].all{
+                    for r in x["Contents"].all{
+                        keys.append(r["Key"].element?.text ?? "")
                     }
                 }
                 return keys

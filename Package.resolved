@@ -119,12 +119,12 @@
         }
       },
       {
-        "package": "SwiftyXMLParser",
-        "repositoryURL": "https://github.com/yahoojapan/SwiftyXMLParser",
+        "package": "SWXMLHash",
+        "repositoryURL": "https://github.com/drmohundro/SWXMLHash.git",
         "state": {
           "branch": null,
-          "revision": "9d82653e535a13a518b411934c0a5c0c84406c22",
-          "version": "5.2.0"
+          "revision": "a4931e5c3bafbedeb1601d3bb76bbe835c6d475a",
+          "version": "5.0.1"
         }
       },
       {
