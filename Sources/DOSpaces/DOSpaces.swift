@@ -51,7 +51,7 @@ public final class DOSpaces : Service {
             self.securityToken = securityToken
         }
     }
- 
+    
 }
 
 extension DOSpaces {
@@ -90,49 +90,51 @@ extension DOSpaces {
     }
     
     func list(_ req: Request, limit: Int? = 1000, marker: String? = "", appendTo: String? = "") throws -> Future<String> {
-            let s3 = try req.makeS3Signer()
-            let url = self.config.endpoint + "?max-keys=\(limit ?? 1000)" + "&marker=" + (marker ?? "")
-            let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none )
-            return try req.make(Client.self).get(url, headers: headers).flatMap(to: String.self){ response in
-                var responseText = response.http.body.description
-                if appendTo != "" {
-                    responseText = responseText.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", with: "")
-                }
-                var str = (appendTo ?? "") + responseText
-                guard let data = str.data(using: .utf8)
-                    else { throw Abort(.noContent) }
-                let xml = SWXMLHash.parse(data)
-                if xml["ListBucketResult"]["NextMarker"].element?.text != nil{
-                    let marker = xml["ListBucketResult"]["NextMarker"].element?.text
-                    return try self.list(req, marker: marker ?? "", appendTo: str)
-                }
-                else {
-                    str = str.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>")
-                    str = str + "</root>"
-                    return req.eventLoop.newSucceededFuture(result: str)
-                }
+        let s3 = try req.makeS3Signer()
+        let url = self.config.endpoint + "?max-keys=\(limit ?? 1000)" + "&marker=" + (marker ?? "")
+        let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none )
+        return try req.make(Client.self).get(url, headers: headers).flatMap(to: String.self){ response in
+            var responseText = response.http.body.description
+            if appendTo != "" {
+                responseText = responseText.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", with: "")
             }
-        }
-        
-        ///Get all the keys
-        ///Return an array containing all the keys in the bucket
-        public func keys(_ req: Request) throws -> Future<[String]> {
-            return try req.DOSpaces().list(req).map{ xml in
-                guard let data = xml.data(using: .utf8)
-                    else { throw Abort(.noContent) }
-                let xml = SWXMLHash.parse(data)
-
-                var keys : [String] = []
-                
-                for x in xml["root"]["ListBucketResult"].all{
-                    for r in x["Contents"].all{
-                        keys.append(r["Key"].element?.text ?? "")
-                    }
-                }
-                return keys
+            var str = (appendTo ?? "") + responseText
+            guard let data = str.data(using: .utf8)
+                else { throw Abort(.noContent) }
+            let xml = SWXMLHash.parse(data)
+            if xml["ListBucketResult"]["NextMarker"].element?.text != nil &&
+                xml["ListBucketResult"]["NextMarker"].element?.text != marker{
+                let marker = xml["ListBucketResult"]["NextMarker"].element?.text
+                return try self.list(req, marker: marker ?? "", appendTo: str)
+            }
+            else {
+                str = str.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>")
+                str = str + "</root>"
+                return req.eventLoop.newSucceededFuture(result: str)
             }
         }
     }
+    
+    
+    ///Get all the keys
+    ///Return an array containing all the keys in the bucket
+    public func keys(_ req: Request) throws -> Future<[String]> {
+        return try req.DOSpaces().list(req).map{ xml in
+            guard let data = xml.data(using: .utf8)
+                else { throw Abort(.noContent) }
+            let xml = SWXMLHash.parse(data)
+            
+            var keys : [String] = []
+            
+            for x in xml["root"]["ListBucketResult"].all{
+                for r in x["Contents"].all{
+                    keys.append(r["Key"].element?.text ?? "")
+                }
+            }
+            return keys
+        }
+    }
+}
 
 
 
