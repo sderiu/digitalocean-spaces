@@ -11,16 +11,17 @@ import Service
 import SwiftyXMLParser
 
 public final class DOSpaces : Service {
-        
+    
     var s3signer : S3Signer
     
     /// Configuration
     public private(set) var config: Config
     
     /// Initializer
-    public init(_ config: Config) throws {
+    public init(_ config: Config, services: inout Services) throws {
         self.config = config
         s3signer = try S3Signer(S3Signer.Config(accessKey: config.accessKey , secretKey: config.secretKey , region: config.region))
+        services.register(s3signer)
     }
     
     
@@ -55,8 +56,8 @@ public final class DOSpaces : Service {
 
 extension DOSpaces {
     
-    /// upload a file
-    /// return the url string of the file
+    /// Upload a file
+    /// Return the url string of the file or the empty string if the file is not valid
     public func upload(_ req: Request, path: String, file: File, name: String?) throws -> Future<String> {
         let s3 = try req.makeS3Signer()
         let url = "\(self.config.endpoint)/\(path)/\( name ?? file.filename )"
@@ -73,8 +74,8 @@ extension DOSpaces {
         }
     }
     
-    ///delete a file
-    ///return status 204 if deleted
+    ///Delete a file
+    ///Return status 204 if deleted
     public func delete(_ req: Request, path: String, name: String) throws -> Future<HTTPStatus> {
         let s3 = try req.makeS3Signer()
         let url = "\(self.config.endpoint)/\(path)/\(name)"
@@ -85,16 +86,22 @@ extension DOSpaces {
         }
     }
     
-    public func list(_ req: Request) throws -> Future<Response> {
+    ///List all files in bucket
+    ///Return a xml string representation of the bucket
+    public func list(_ req: Request) throws -> Future<String> {
         let s3 = try req.makeS3Signer()
         let url = self.config.endpoint
         let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none )
-        return try req.make(Client.self).get(url, headers: headers)
+        return try req.make(Client.self).get(url, headers: headers).map(to: String.self){ response in
+            return response.http.body.description
+        }
     }
     
+    ///Get all the keys
+    ///Return an array containing all the keys in the bucket
     public func keys(_ req: Request) throws -> Future<[String]> {
-        return try req.DOSpaces().list(req).map{ response in
-            guard let data = response.http.body.data else { throw Abort(.noContent) }
+        return try req.DOSpaces().list(req).map{ xml in
+            guard let data = xml.data(using: .utf8) else { throw Abort(.noContent) }
             let xml = XML.parse(data)
             var keys : [String] = []
             for key in xml.ListBucketResult.Contents {
