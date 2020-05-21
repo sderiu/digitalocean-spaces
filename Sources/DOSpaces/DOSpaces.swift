@@ -89,30 +89,51 @@ extension DOSpaces {
         }
     }
     
-    ///List all files in bucket
-    ///Return a xml string representation of the bucket
-    public func list(_ req: Request) throws -> Future<String> {
-        let s3 = try req.makeS3Signer()
-        let url = self.config.endpoint
-        let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none )
-        return try req.make(Client.self).get(url, headers: headers).map(to: String.self){ response in
-            return response.http.body.description
-        }
-    }
-    
-    ///Get all the keys
-    ///Return an array containing all the keys in the bucket
-    public func keys(_ req: Request) throws -> Future<[String]> {
-        return try req.DOSpaces().list(req).map{ xml in
-            guard let data = xml.data(using: .utf8) else { throw Abort(.noContent) }
-            let xml = XML.parse(data)
-            var keys : [String] = []
-            for key in xml.ListBucketResult.Contents {
-                keys.append(key.Key.text ?? "")
+    func list(_ req: Request, limit: Int? = 1000, marker: String? = "", appendTo: String? = "") throws -> Future<String> {
+            let s3 = try req.makeS3Signer()
+            let url = self.config.endpoint + "?max-keys=\(limit ?? 1000)" + "&marker=" + (marker ?? "")
+            let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none )
+            return try req.make(Client.self).get(url, headers: headers).flatMap(to: String.self){ response in
+                var responseText = response.http.body.description
+                if appendTo != "" {
+                    responseText = responseText.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", with: "")
+                }
+                var str = (appendTo ?? "") + responseText
+                guard let data = str.data(using: .utf8)
+                    else { throw Abort(.noContent) }
+                let xml = XML.parse(data)
+                if xml.ListBucketResult.NextMarker.text != nil{
+                    let marker = xml.ListBucketResult.NextMarker.text
+                    return try self.list(req, marker: marker ?? "", appendTo: str)
+                }
+                else {
+                    str = str.replacingOccurrences(of: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>", with: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>")
+                    str = str + "</root>"
+                    return req.eventLoop.newSucceededFuture(result: str)
+                }
             }
-            return keys
+        }
+        
+        ///Get all the keys
+        ///Return an array containing all the keys in the bucket
+        public func keys(_ req: Request) throws -> Future<[String]> {
+            return try req.DOSpaces().list(req).map{ xml in
+                guard let data = xml.data(using: .utf8)
+                    else { throw Abort(.noContent) }
+                let xml = XML.parse(data)
+                print(xml)
+                var keys : [String] = []
+                for x in xml.root {
+                    for r in x.ListBucketResult{
+                        for key in r.Contents {
+                            keys.append(key.Key.text ?? "")
+                        }
+                    }
+                }
+                return keys
+            }
         }
     }
-}
+
 
 
