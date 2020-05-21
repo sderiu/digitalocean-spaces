@@ -5,7 +5,7 @@
 Simple service to easily manage files in DigitalOcean Spaces.
 Uses [S3Signer](https://github.com/rausnitz/S3.git) for authentication.
 
-* Currently supported operation: `upload`,`delete`,`keys`,'exist'
+* Currently supported operation: `upload`,`delete`,`keys`,`exist
 
 ### Installation (SPM)
  ```ruby
