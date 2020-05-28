@@ -57,23 +57,28 @@ public final class DOSpaces : Service {
 extension DOSpaces {
     
     /// Upload a file
+    /// If not provided, name will be set to a random 16 character string
     /// Return the url string of the file or the empty string if the file is not valid
     public func upload(_ req: Request, path: String, file: File?, name: String?) throws -> Future<String> {
         guard let file = file else {
             return req.eventLoop.newSucceededFuture(result: "")
         }
-        let s3 = try req.makeS3Signer()
-        let url = "\(self.config.endpoint)/\(path)/\( name ?? file.filename )"
-        var headers = try s3.headers(for: .PUT, urlString: url, payload: Payload.bytes(file.data))
-        headers.add(name: "x-amz-acl", value: "public-read")
-        return try req.make(Client.self).put(url, headers: headers) { put in
-            return put.http.body = HTTPBody(data: file.data)
-        }.map { response in
-            guard response.http.status == .ok else { throw Abort(response.http.status)}
-            if(self.config.cdn ?? false){
-                return url.replacingOccurrences(of: ".digitaloceanspaces", with: ".cdn.digitaloceanspaces")
+        return try self.generateUnique(req, length: 16).flatMap(to: String.self){ random in
+            var ext = ""
+            if(file.ext != nil){ ext = "." + (file.ext ?? "") }
+            let s3 = try req.makeS3Signer()
+            let url = "\(self.config.endpoint)/\(path)/\( name ?? random )\(ext)"
+            var headers = try s3.headers(for: .PUT, urlString: url, payload: Payload.bytes(file.data))
+            headers.add(name: "x-amz-acl", value: "public-read")
+            return try req.make(Client.self).put(url, headers: headers) { put in
+                return put.http.body = HTTPBody(data: file.data)
+            }.map { response in
+                guard response.http.status == .ok else { throw Abort(response.http.status)}
+                if(self.config.cdn ?? false){
+                    return url.replacingOccurrences(of: ".digitaloceanspaces", with: ".cdn.digitaloceanspaces")
+                }
+                return url
             }
-            return url
         }
     }
     
@@ -143,6 +148,20 @@ extension DOSpaces {
                 }
             }
             return keys
+        }
+    }
+    
+    
+    func random(length: Int) -> String {
+        let letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return String((0..<length).map{ _ in letters.randomElement()! })
+    }
+    
+    func generateUnique(_ req: Request, length: Int) throws -> Future<String> {
+        let unique = self.random(length: length)
+        return try req.DOSpaces().exist(req, key: unique).flatMap(to: String.self){ exist in
+            if exist == .ok { return try self.generateUnique(req, length: length) }
+            else { return req.eventLoop.newSucceededFuture(result: unique) }
         }
     }
 }
