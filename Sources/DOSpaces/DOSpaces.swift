@@ -59,7 +59,7 @@ extension DOSpaces {
     /// Upload a file
     /// If not provided, name will be set to a random 16 character string
     /// Return the url string of the file or the empty string if the file is not valid
-    public func upload(_ req: Request, path: String, file: File?, name: String?) throws -> Future<String> {
+    public func upload(_ req: Request, path: String, file: File?, name: String? = nil) throws -> Future<String> {
         guard let file = file else {
             return req.eventLoop.newSucceededFuture(result: "")
         }
@@ -81,6 +81,7 @@ extension DOSpaces {
             }
         }
     }
+
     
     ///Delete a file
     ///Return status 204 if deleted
