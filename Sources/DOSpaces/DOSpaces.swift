@@ -59,7 +59,7 @@ extension DOSpaces {
     /// Upload a file
     /// If not provided, name will be set to a random 16 character string
     /// Return the url string of the file or the empty string if the file is not valid
-    public func upload(_ req: Request, path: String, file: File?, name: String? = nil) throws -> Future<String> {
+    public func upload(_ req: Request, path: String, file: File?, name: String? = nil, _ permission: Permission? = .Public) throws -> Future<String> {
         guard let file = file else {
             return req.eventLoop.newSucceededFuture(result: "")
         }
@@ -69,7 +69,7 @@ extension DOSpaces {
             let s3 = try req.makeS3Signer()
             let url = "\(self.config.endpoint)/\(path)/\( name ?? random )\(ext)"
             var headers = try s3.headers(for: .PUT, urlString: url, payload: Payload.bytes(file.data))
-            headers.add(name: "x-amz-acl", value: "public-read")
+            headers.add(name: "x-amz-acl", value: "\(permission?.rawValue ?? "public-read")")
             return try req.make(Client.self).put(url, headers: headers) { put in
                 return put.http.body = HTTPBody(data: file.data)
             }.map { response in
@@ -79,6 +79,20 @@ extension DOSpaces {
                 }
                 return url
             }
+        }
+    }
+    
+    public func download(_ req: Request, url: URL) throws -> Future<File> {
+        let s3 = try req.makeS3Signer()
+        let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none)
+        return try req.make(Client.self).get(url, headers: headers)
+            .map { response in
+            guard response.http.status == .ok else { throw Abort(response.http.status)}
+                guard let data = req.http.body.data else {
+                    throw Abort(.noContent)
+                }
+                let filename = url.absoluteString.components(separatedBy: "/").last ?? "noname"
+                return File(data: data, filename: filename)
         }
     }
 
@@ -165,7 +179,12 @@ extension DOSpaces {
             else { return req.eventLoop.newSucceededFuture(result: unique) }
         }
     }
-}
+    
+    public enum Permission: String {
+        case Public = "public-read"
+        case Private = "private"
+    }
 
+}
 
 
