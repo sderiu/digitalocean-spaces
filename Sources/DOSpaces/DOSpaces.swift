@@ -88,7 +88,7 @@ extension DOSpaces {
         return try req.make(Client.self).get(url, headers: headers)
             .map { response in
             guard response.http.status == .ok else { throw Abort(response.http.status)}
-                guard let data = req.http.body.data else {
+                guard response.http.body.data != nil else {
                     throw Abort(.noContent)
                 }
                 return response
