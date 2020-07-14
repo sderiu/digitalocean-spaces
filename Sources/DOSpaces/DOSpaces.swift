@@ -82,7 +82,7 @@ extension DOSpaces {
         }
     }
     
-    public func download(_ req: Request, url: URL) throws -> Future<File> {
+    public func download(_ req: Request, url: URL) throws -> Future<Response> {
         let s3 = try req.makeS3Signer()
         let headers = try s3.headers(for: .GET, urlString: url, payload: Payload.none)
         return try req.make(Client.self).get(url, headers: headers)
@@ -91,8 +91,7 @@ extension DOSpaces {
                 guard let data = req.http.body.data else {
                     throw Abort(.noContent)
                 }
-                let filename = url.absoluteString.components(separatedBy: "/").last ?? "noname"
-                return File(data: data, filename: filename)
+                return response
         }
     }
 
